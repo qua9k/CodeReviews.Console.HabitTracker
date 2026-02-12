@@ -15,8 +15,7 @@ class HabitTracker
             connection.Open();
             CreateDatabase(connection);
             SeedDatabase(connection);
-            Console.WriteLine("\nPress any key to return to the main menu.");
-            Console.ReadKey();
+            Pause();
         }
         else
         {
@@ -58,32 +57,6 @@ class HabitTracker
         }
     }
 
-    private static void PrintMenuOptions()
-    {
-        Console.Clear();
-        Console.Write(
-            """
-            Please choose an option and press 'Enter':
-
-            'c': Create entry
-            'r': Read entry
-            'u': Update entry
-            'd': Delete entry
-            'x': Exit
-
-            Your choice: 
-            """
-        );
-    }
-
-    private static void PrintInputUnknown()
-    {
-        Console.Clear();
-        Console.WriteLine("Your input was not understood.");
-        Console.WriteLine("\nPress any key to return to the main menu.");
-        Console.ReadKey();
-    }
-
     private static bool CloseConnection(SqliteConnection connection)
     {
         Console.WriteLine("Goodbye.");
@@ -117,9 +90,9 @@ class HabitTracker
             @"
               INSERT INTO tracker
               VALUES 
-              (1, '2026-01-01', 1),
-              (2, '2026-01-02', 2),
-              (3, '2026-01-03', 3)
+              (1, '1901-01-01', 1),
+              (2, '1902-02-02', 2),
+              (3, '1903-03-03', 3)
             ";
 
         seedCommand.ExecuteNonQuery();
@@ -132,8 +105,24 @@ class HabitTracker
         Console.Write("Enter the date (YYYY-mm-dd): ");
         string? date = Console.ReadLine();
 
+        while (!DateTime.TryParse(date, out DateTime _))
+        {
+            Console.Clear();
+            Console.WriteLine("The date must be in YYYY-mm-dd format.");
+            Console.Write("Please re-enter the date: ");
+            date = Console.ReadLine();
+        }
+
         Console.Write("Enter the habit count: ");
         string? count = Console.ReadLine();
+
+        while (!uint.TryParse(count, out uint _))
+        {
+            Console.Clear();
+            Console.WriteLine("Habit count must be a number greater than 0.");
+            Console.Write("Please re-enter the habit count: ");
+            count = Console.ReadLine();
+        }
 
         var seedCommand = connection.CreateCommand();
 
@@ -145,70 +134,142 @@ class HabitTracker
             ";
 
         seedCommand.ExecuteNonQuery();
-        Console.WriteLine("\nPress any key to return to the main menu.");
-        Console.ReadKey();
+
+        Pause();
     }
 
+    // [[todo]] :: implement
     private static void UpdateEntry(SqliteConnection connection)
     {
-        Console.Clear();
-        Console.Write("Enter the id of the entry to update: ");
-        Console.WriteLine("Enter the updated habit count: ");
-        Console.WriteLine("\nPress any key to return to the main menu.");
-        Console.ReadKey();
+        string? primaryKey = GetId(CrudOps.Update);
+        var updateCommand = connection.CreateCommand();
+        Pause();
     }
 
     private static void DeleteEntry(SqliteConnection connection)
     {
-        Console.Clear();
-        Console.Write("Enter the id of the entry to delete (or '*' for all entries): ");
-
-        string? pKey = Console.ReadLine();
+        string? primaryKey = GetId(CrudOps.Delete);
         var deleteCommand = connection.CreateCommand();
 
         deleteCommand.CommandText = $"DELETE FROM tracker";
 
-        if (pKey != "*")
+        if (primaryKey != "*")
         {
-            deleteCommand.CommandText = $" WHERE id = {pKey}";
+            deleteCommand.CommandText += $" WHERE id = {primaryKey}";
         }
 
         deleteCommand.ExecuteNonQuery();
 
-        Console.WriteLine("\nPress any key to return to the main menu.");
-        Console.ReadKey();
+        Pause();
+    }
+
+    private static string GetId(string crudOp)
+    {
+        string message = $"Enter the id of the entry to {crudOp}";
+
+        Console.Clear();
+
+        if (crudOp == CrudOps.Update)
+        {
+            Console.Write($"{message}: ");
+        }
+        else
+        {
+            // [[note]] :: only Delete and Read can target all entries
+            Console.Write($"{message} ('*' for all entries): ");
+        }
+
+        string? id = Console.ReadLine();
+
+        if (id == "*" && (crudOp == CrudOps.Delete || crudOp == CrudOps.Read))
+        {
+            return id;
+        }
+
+        while (!int.TryParse(id, out int _))
+        {
+            Console.Clear();
+            Console.WriteLine("The id must be an integer greater than 0.");
+            Console.Write("Please re-enter the id: ");
+            id = Console.ReadLine();
+        }
+
+        return id;
     }
 
     private static void ReadEntry(SqliteConnection connection)
     {
-        Console.Clear();
-        Console.Write("Enter the id of the entry to read (or '*' for all entries): ");
-
-        string? pKey = Console.ReadLine();
+        string? primaryKey = GetId(CrudOps.Read);
         var selectCommand = connection.CreateCommand();
 
         selectCommand.CommandText = "SELECT * FROM tracker";
 
-        if (pKey != "*")
+        if (primaryKey != "*")
         {
-            selectCommand.CommandText += $" WHERE id = {pKey}";
+            selectCommand.CommandText += $" WHERE id = {primaryKey}";
         }
-
-        Console.Clear();
-        Console.WriteLine("Your query results:\n");
 
         using var reader = selectCommand.ExecuteReader();
 
-        while (reader.Read())
+        if (!reader.HasRows)
         {
-            var id = reader.GetInt16(0);
-            var date = reader.GetDateTime(1);
-            var count = reader.GetInt16(2);
+            Console.Clear();
+            Console.WriteLine($"Your query returned no results.");
+        }
+        else
+        {
+            Console.Clear();
+            Console.WriteLine("Your query results:\n");
 
-            Console.WriteLine($"{id}.) {date:MMM}. {date.Day}, {date.Year}: {count}");
+            while (reader.Read())
+            {
+                var id = reader.GetInt16(0);
+                var date = reader.GetDateTime(1);
+                var count = reader.GetInt16(2);
+
+                Console.WriteLine($"{id}.) {date:MMM}. {date.Day}, {date.Year}: {count}");
+            }
         }
 
+        Pause();
+    }
+
+    private static void Pause()
+    {
         Console.WriteLine("\nPress any key to return to the main menu.");
         Console.ReadKey();
     }
+
+    private static void PrintMenuOptions()
+    {
+        Console.Clear();
+        Console.Write(
+            """
+            Please choose an option and press 'Enter':
+
+            'c': Create entry
+            'r': Read entry
+            'u': Update entry
+            'd': Delete entry
+            'x': Exit
+
+            Your choice: 
+            """
+        );
+    }
+
+    private static void PrintInputUnknown()
+    {
+        Console.Clear();
+        Console.WriteLine("Your input was not understood.");
+        Pause();
+    }
+}
+
+static class CrudOps
+{
+    internal static readonly string Create = "create";
+    internal static readonly string Read = "read";
+    internal static readonly string Update = "update";
+    internal static readonly string Delete = "delete";
 }
