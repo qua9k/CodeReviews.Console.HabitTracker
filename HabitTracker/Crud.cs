@@ -6,23 +6,25 @@ class Crud : ICrudController
     public static void CreateEntry(SqliteConnection connection)
     {
         Console.Clear();
-        Console.Write("Enter the date (YYYY-mm-dd): ");
 
-        string? date = Console.ReadLine();
+        Console.Write("Enter the habit: ");
+        var habit = Console.ReadLine();
+
+        Console.Write("Enter the date (YYYY-mm-dd): ");
+        var date = Console.ReadLine();
         date = Validator.ValidateField("date", date);
 
         Console.Write("Enter the habit count: ");
-
-        string? count = Console.ReadLine();
+        var count = Console.ReadLine();
         count = Validator.ValidateField("count", count);
 
         var seedCommand = connection.CreateCommand();
 
         seedCommand.CommandText =
             $@"
-              INSERT INTO tracker(date, count)
+              INSERT INTO tracker(date, habit, count)
               VALUES 
-              ('{date}', {count})
+              ('{date}', '{habit}', {count})
             ";
 
         seedCommand.ExecuteNonQuery();
@@ -30,15 +32,15 @@ class Crud : ICrudController
         UserInterface.Pause();
     }
 
-    // [[todo]] :: implement
-    // [[bug]] ::
+    // [[bug]] [[todo]] :: implement
     public static void UpdateEntry(SqliteConnection connection)
     {
-        string? primaryKey = PromptForId(CrudOps.Update);
+        var primaryKey = PromptForId(CrudOps.Update);
         var updateCommand = connection.CreateCommand();
 
         DateTime newDate = DateTime.Now;
-        int newCount = 99;
+        var habit = "Skateboarding";
+        var newCount = 99;
 
         Console.WriteLine($"the date: {newDate}");
 
@@ -46,6 +48,7 @@ class Crud : ICrudController
             @$"
                 UPDATE tracker
                 SET date = '{newDate}',
+                    habit = '{habit}',
                     count = {newCount}
                 WHERE
                     id = {primaryKey}
@@ -56,7 +59,7 @@ class Crud : ICrudController
 
     public static void DeleteEntry(SqliteConnection connection)
     {
-        string? primaryKey = PromptForId(CrudOps.Delete);
+        var primaryKey = PromptForId(CrudOps.Delete);
         var deleteCommand = connection.CreateCommand();
 
         deleteCommand.CommandText = $"DELETE FROM tracker";
@@ -73,7 +76,7 @@ class Crud : ICrudController
 
     public static string PromptForId(string crudOp)
     {
-        string message = $"Enter the id of the entry to {crudOp}";
+        var message = $"Enter the id of the entry to {crudOp}";
 
         Console.Clear();
 
@@ -86,7 +89,7 @@ class Crud : ICrudController
             Console.Write($"{message} ('*' for all entries): ");
         }
 
-        string? id = Console.ReadLine();
+        var id = Console.ReadLine();
 
         if (id == "*" && (crudOp == CrudOps.Delete || crudOp == CrudOps.Read))
         {
@@ -100,7 +103,7 @@ class Crud : ICrudController
 
     public static void ReadEntry(SqliteConnection connection)
     {
-        string? primaryKey = PromptForId(CrudOps.Read);
+        var primaryKey = PromptForId(CrudOps.Read);
         var selectCommand = connection.CreateCommand();
 
         selectCommand.CommandText = "SELECT * FROM tracker";
@@ -126,9 +129,10 @@ class Crud : ICrudController
             {
                 var id = reader.GetInt16(0);
                 var date = reader.GetDateTime(1);
-                var count = reader.GetInt16(2);
+                var habit = reader.GetString(2);
+                var count = reader.GetInt16(3);
 
-                Console.WriteLine($"{id}.) {date:MMM}. {date.Day}, {date.Year}: {count}");
+                Console.WriteLine($"{id}.) [{date:MMM}. {date.Day}, {date.Year}] {habit} x{count}");
             }
         }
 

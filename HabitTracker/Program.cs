@@ -6,7 +6,7 @@ class Program
 {
     static void Main()
     {
-        string databaseFile = "habit.db";
+        var databaseFile = "habit.db";
         using var connection = new SqliteConnection();
 
         if (!File.Exists(databaseFile))
@@ -28,7 +28,7 @@ class Program
         {
             UserInterface.PrintMenuOptions();
 
-            string? input = Console.ReadLine();
+            var input = Console.ReadLine();
 
             switch (input)
             {

@@ -15,6 +15,7 @@ public class Database
                 CREATE TABLE tracker (
                     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
                     date DATE NOT NULL,
+                    habit TEXT NOT NULL,
                     count INTEGER NOT NULL
                 )
             ";
@@ -32,9 +33,9 @@ public class Database
             @"
               INSERT INTO tracker
               VALUES 
-              (1, '1901-01-01', 1),
-              (2, '1902-02-02', 2),
-              (3, '1903-03-03', 3)
+              (1, '1901-01-01', 'Rock Climbing', 1),
+              (2, '1902-02-02', 'Guitar', 2),
+              (3, '1903-03-03', 'Painting', 3)
             ";
 
         seedCommand.ExecuteNonQuery();
