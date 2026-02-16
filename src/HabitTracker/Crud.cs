@@ -91,9 +91,17 @@ class Crud : ICrudController
 
     public static string PromptForDate()
     {
-        Console.Write("Enter the date (YYYY-mm-dd): ");
+        Console.Write("Enter the date (YYYY-MM-DD or 't' for today): ");
+
         var date = Console.ReadLine();
+
+        if (date == "t")
+        {
+            date = Convert.ToString(DateTime.Today);
+        }
+
         date = Validator.ValidateField("date", date);
+
         return date;
     }
 
